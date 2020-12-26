@@ -26,10 +26,10 @@ struct bmp_header * generate_header (struct image const *img) {
 }
 
 enum read_status from_bmp( FILE* in, struct image* img){
-// need to add errors check
+     // need to add all errors check
+    if (in == NULL) { return READ_INVALID_PATH; }
     struct bmp_header header;
     fread(&header, 1, sizeof(header), in);
-
     uint8_t *data = (uint8_t *) malloc(header.biSizeImage);
     fseek(in, header.bOffBits, SEEK_SET);
     fread(data, 1, header.biSizeImage, in);
@@ -42,7 +42,7 @@ enum read_status from_bmp( FILE* in, struct image* img){
     for (size_t row = 0; row < header.biHeight; row++) {
         for (size_t col = 0; col < header.biWidth; col++) {
             size_t i_pixel = row * img->width + col;
-            img->data[row * header.biWidth + col] = *(struct pixel *) ((data) + sizeof(struct pixel) * (row * header.biWidth + col) + padding * row);
+            img->data[i_pixel] = *(struct pixel *) ((data) + sizeof(struct pixel) * (i_pixel) + padding * row);
         }
     }
     return READ_OK;

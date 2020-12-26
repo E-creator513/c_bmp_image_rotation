@@ -13,7 +13,7 @@ struct image *rotate(struct image const * img) {
 
     for (size_t row = 0; row < img->height; row++) {
         for (size_t col = 0; col < img->width; col++) {
-            img_rotate->data[row+((img_rotate->height - col - 1) * img_rotate->width)] = img->data[col+row * img->width];
+            img_rotate->data[row+((img_rotate->height-col-1) * img_rotate->width)] = img->data[col+row * img->width];
         }
     }
     return img_rotate;

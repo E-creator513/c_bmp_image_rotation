@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 #include "bmp_rotation.h"
 #include "bmp_io.h"
 

@@ -19,14 +19,14 @@ int main(int argc, char *argv[]) {
     } else {
         output_path = argv[2];
     }
-    printf("Input File: %s \nOutput File: %s\n", input_path, output_path);
-    struct image *img = (struct image *) malloc(sizeof(struct image));
+    printf("Input File: '%s' \nOutput File: '%s'\n", input_path, output_path);
+    struct image *img = malloc_bmp();
 
     FILE *in = fopen(input_path, "rb");
     
      switch (from_bmp(in,img)) {
         case READ_OK: {
-            printf("File %s is loaded\n",input_path);
+            printf("File '%s' is loaded\n",input_path);
             break;
         }
         case READ_INVALID_PATH: {
@@ -43,10 +43,10 @@ int main(int argc, char *argv[]) {
     struct image * rotated_img = rotate(img);
 
     FILE *out = fopen(output_path, "wb");
-
      switch (to_bmp(out,rotated_img)){
         case WRITE_OK: {
-            printf("Image is saved in file %s\n", output_path);
+            printf("Image is saved in file '%s'\n", output_path);
+            break;
         }
         default: {
             printf("Undefined reading error\n");
@@ -54,5 +54,8 @@ int main(int argc, char *argv[]) {
         }
     }
     fclose(out);
+    free_bmp(img);
+    free_bmp(rotated_img);
+    printf("Memory freed\n");
     return 0;
 }

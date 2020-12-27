@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <math.h>
 #include "bmp_rotation.h"
+#include "bmp_io.h"
 
 
 struct image *rotate(struct image const * img) {
-    struct image *img_rotate = (struct image *) malloc(sizeof(struct image));
+    struct image *img_rotate = malloc_bmp();
     img_rotate->height = img->width;
     img_rotate->width = img->height;
     

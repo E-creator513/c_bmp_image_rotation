@@ -1,23 +1,28 @@
+
+APP_NAME = rotator
+
 CC = gcc
-APP = rotator 
-CFLAGS = -std=c18 -pedantic -Wall -Werror
+CFLAGS = --std=c18 -Isrc/ -pedantic -Wall -Werror
 SRC_DIR = src/
 BUILD_DIR = build/
+APP = $(BUILD_DIR)$(APP_NAME) 
 
-c_src_files := $(wildcard $(SRC_DIR)*.c)
-obj_files := $(addsuffix .o, $(basename $(notdir $(c_src_files))))
+C_SRC_FILES = $(wildcard $(SRC_DIR)*.c)
+OBJ_FILES = $(addprefix $(BUILD_DIR),$(notdir $(C_SRC_FILES:.c=.o)))
 
+
+.PHONY: all clean
 
 define build-obj
-	mkdir -p $(BUILD_DIR)
-	$(CC) -c $(CFLAGS) $< -o $(BUILD_DIR)$@
+	$(CC) -c $(CFLAGS) $< -o $@ 
 endef
 
-$(APP): $(obj_files)
-	$(CC) -o $(BUILD_DIR)$(APP) $(^:%=$(BUILD_DIR)%)
+all: $(APP)
 
+$(APP): $(OBJ_FILES)
+	$(CC) -o $(APP) $^
+
+$(OBJ_FILES): $(BUILD_DIR)%.o: $(SRC_DIR)%.c
+	$(call build-obj) 
 clean:
-	rm -rf $(BUILD_DIR)*
-
-%.o: $(SRC_DIR)%.c
-	$(call build-obj)
+	rm  $(BUILD_DIR)*

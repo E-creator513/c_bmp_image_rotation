@@ -1,4 +1,3 @@
-
 APP_NAME = rotator
 
 CC = gcc
@@ -9,7 +8,6 @@ APP = $(BUILD_DIR)$(APP_NAME)
 
 C_SRC_FILES = $(wildcard $(SRC_DIR)*.c)
 OBJ_FILES = $(addprefix $(BUILD_DIR),$(notdir $(C_SRC_FILES:.c=.o)))
-
 
 .PHONY: all clean
 
@@ -23,6 +21,8 @@ $(APP): $(OBJ_FILES)
 	$(CC) -o $(APP) $^
 
 $(OBJ_FILES): $(BUILD_DIR)%.o: $(SRC_DIR)%.c
+	mkdir -p $(BUILD_DIR)
 	$(call build-obj) 
+
 clean:
-	rm  $(BUILD_DIR)*
+	rm  -rf $(BUILD_DIR)*

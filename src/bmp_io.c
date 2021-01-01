@@ -93,3 +93,45 @@ enum write_status to_bmp( FILE* out, struct image const* img ){
     _free_bmp_header(header);
     return WRITE_OK;
 }
+uint8_t print_read_status(enum read_status status){
+    switch (status) {
+        case READ_OK: {
+            printf("Image form file is loaded\n");
+            break;
+        }
+        case READ_INVALID_PATH: {
+            printf("Input file path not found\n");
+            break;
+        }
+        case READ_INVALID_HEADER: {
+            printf("Invalid file header\n");
+            break;
+        }
+        case READ_INVALID_BITS: {
+            printf("Only 24-bit bpm file supported\n");
+            break;
+        }
+        default: {
+            printf("Undefined reading error\n");
+            break;
+        }
+    }
+    return status;
+}
+uint8_t print_write_status(enum write_status status){
+    switch (status){
+        case WRITE_OK: {
+            printf("Image is saved in file\n");
+            break;
+        }
+        case WRITE_ERROR:{
+            printf("File write error\n");
+            break;
+        }
+        default: {
+            printf("Undefined writing error\n");
+            break;
+        }
+    }
+    return status;
+}

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include "file_io.h"
 #include "bmp_io.h"
 #include "bmp_struct.h"
 #include "bmp_rotation.h"
@@ -24,58 +24,30 @@ int main(int argc, char *argv[]) {
     printf("Input File: '%s' \nOutput File: '%s'\n", input_path, output_path);
     struct image *img = malloc_bmp();
 
-    FILE *in = fopen(input_path, "rb");
-    uint8_t status_r = from_bmp(in,img);
-    switch (status_r) {
-        case READ_OK: {
-            printf("File '%s' is loaded\n",input_path);
-            break;
-        }
-        case READ_INVALID_PATH: {
-            printf("Input file path not found\n");
-            return 1;
-        }
-        case READ_INVALID_HEADER: {
-            printf("Invalid file header\n");
-            return 1;
-        }
-        case READ_INVALID_BITS: {
-            printf("Only 24-bit bpm file supported\n");
-            return 1;
-        }
-        default: {
-            printf("Undefined reading error\n");
-            return 666;
-        }
+    FILE * in = NULL; 
+    enum open_status status_or = fopen_read(&in,input_path);
+    if(print_open_status(status_or)){
+        return status_or;
     }
-    fclose(in);
-
+    enum read_status status_r = from_bmp(in,img);
+    file_close(in);
+    if(print_read_status(status_r)){
+        return status_r;
+    }
     struct image * rotated_img = rotate(img);
     free_bmp(img);
 
-    FILE *out = fopen(output_path, "wb");
-    if (!out) {
-        printf("File '%s' open error\n", output_path);
-        return 1;
+    FILE *out = NULL;
+    enum open_status status_ow = fopen_write(&out,output_path);
+    if(print_open_status(status_ow)){
+        return status_ow;
     }
-
     uint8_t status_w = to_bmp(out,rotated_img);
-    fclose(out);
-    free_bmp(rotated_img);
-     switch (status_w){
-        case WRITE_OK: {
-            printf("Image is saved in file '%s'\n", output_path);
-            break;
-        }
-        case WRITE_ERROR:{
-            printf("File write error\n");
-            return 1;
-        }
-        default: {
-            printf("Undefined writing error\n");
-            return 666;
-        }
+    file_close(out);
+    if(print_write_status(status_w)){
+        return status_w;
     }
+    free_bmp(rotated_img);
     printf("Memory freed\n");
     return 0;
 }

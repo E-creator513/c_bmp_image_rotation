@@ -2,7 +2,7 @@
 ## Laboratory work on programming languages (C)
 ### Build & run
 - To build you need to type `make` in the root directory.
-- After to run you need to type `./build/rotator`
+- After that to run you need to type `./build/rotator`
 
 ### Example of execution
 #### Input and output

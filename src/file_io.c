@@ -24,25 +24,18 @@ enum close_status file_close(FILE * file){
     return CLOSE_OK;
     }
 
-uint8_t print_open_status(enum open_status status){
-    switch (status){
-        case OPEN_OK: {
-            printf("File for reading/writing is open\n");
-            break;
-        }
-        case OPEN_WRITE_ERROR:{
-            printf("Error opening file for writing\n");
-            break;
-        }
-        case OPEN_READ_ERROR:{
-            printf("Error opening file for reading\n");
-            break;
-        }
-    }
+static char* const open_status_string[] = {
+        [OPEN_OK]             = "File for reading/writing is open\n",
+        [OPEN_WRITE_ERROR]    = "Error opening file for writing\n",
+        [OPEN_READ_ERROR]     = "Error opening file for reading\n",
+};
+
+enum open_status print_open_status(enum open_status status){
+    printf(open_status_string[status]);
     return status;
 }
 
-uint8_t print_close_status(enum open_status status){
+enum open_status print_close_status(enum open_status status){
     printf("File is close");
     return status;
 }

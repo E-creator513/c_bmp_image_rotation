@@ -3,12 +3,12 @@
 #include "bmp_io.h"
 #include "bmp_struct.h"
 
-struct image * malloc_bmp(){
-   return (struct image *) malloc(sizeof(struct image));
-}
 void free_bmp(struct image* img){
     free(img->data);
-    free(img);
+}
+
+uint64_t count_padding(struct image const *img){
+    return (img->width % 4);
 }
 
 struct bmp_header * _malloc_bmp_header(){
@@ -19,119 +19,96 @@ void _free_bmp_header(struct bmp_header * header){
     free(header);
 }
 
-struct bmp_header * _generate_header (struct image const *img) {
+struct bmp_header _generate_header (struct image const *img) {
 
-    struct bmp_header *header = _malloc_bmp_header();
+    struct bmp_header header = {
+    .bfType = 0x4D42,
+    .bfileSize = img->width * img->height * sizeof(struct pixel) + img->height * count_padding(img) + sizeof(struct bmp_header),
+    .bfReserved = 0,
+    .bOffBits = sizeof(struct bmp_header),
 
-    header->bfType = 0x4D42;
-    header->bfileSize = img->width * img->height * sizeof(struct pixel) + img->height * (img->width % 4) + sizeof(struct bmp_header);
-    header->bfReserved = 0;
-    header->bOffBits = sizeof(struct bmp_header);
-
-    header->biSize = 40;
-    header->biWidth = img->width;
-    header->biHeight = img->height;
-    header->biPlanes = 1;
-    header->biBitCount = 24;
-    header->biCompression = 0;
-    header->biSizeImage = header->bfileSize - header->bOffBits;
-    header->biXPelsPerMeter = 0;
-    header->biYPelsPerMeter = 0;
-    header->biClrUsed = 0;
-    header->biClrImportant = 0;
+    .biSize = 40,
+    .biWidth = img->width,
+    .biHeight = img->height,
+    .biPlanes = 1,
+    .biBitCount = 24,
+    .biCompression = 0,
+    .biXPelsPerMeter = 0,
+    .biYPelsPerMeter = 0,
+    .biClrUsed = 0,
+    .biClrImportant = 0};
+    header.biSizeImage = header.bfileSize - header.bOffBits;
     return header;
 }
 
-enum read_status from_bmp( FILE* in, struct image* img){
-    if (in == NULL) { return READ_INVALID_PATH; }
-    struct bmp_header *header = _malloc_bmp_header();
-    fread(header, 1, sizeof(struct bmp_header), in);
-    if (header->bfType != 0x4D42){ return READ_INVALID_SIGNATURE; }
-    if (header->biBitCount != 24){ return READ_INVALID_BITS; }
-    if (header->biSize !=40 
-    || header->biCompression!=0
-    || header->bfileSize != header->bOffBits + header->biSizeImage){
+static enum read_status _check_header(const struct bmp_header header){
+if (header.bfType != 0x4D42){ return READ_INVALID_SIGNATURE; }
+    if (header.biBitCount != 24){ return READ_INVALID_BITS; }
+    if (header.biSize !=40 
+    || header.biCompression!=0
+    || header.bfileSize != header.bOffBits + header.biSizeImage){
        return READ_INVALID_HEADER;
     }
-    uint8_t *file_data = (uint8_t *) malloc(header->biSizeImage);
-    fseek(in, header->bOffBits, SEEK_SET);
-    fread(file_data, 1, header->biSizeImage, in);
-    uint64_t data_size = header->biHeight * header->biWidth * sizeof(struct pixel);
-    img->data = (struct pixel *) malloc(data_size);
-    img->height = header->biHeight;
-    img->width = header->biWidth;
-    uint16_t padding = header->biWidth % 4;
+return READ_OK;
+}
 
-    for (size_t row = 0; row < header->biHeight; row++) {
-        for (size_t col = 0; col < header->biWidth; col++) {
-            size_t i_pixel = row * img->width + col;
-            img->data[i_pixel] = *(struct pixel *) ((file_data) + sizeof(struct pixel) * (i_pixel) + padding * row);
-        }
+enum read_status from_bmp( FILE* in, struct image* img){
+    if (in == NULL)  return READ_INVALID_PATH; 
+    struct bmp_header header ;
+    fread(&header, 1, sizeof(struct bmp_header), in);
+
+    const enum read_status header_status = _check_header(header);
+    if (header_status) return header_status;
+
+    uint64_t data_size = header.biHeight * header.biWidth * sizeof(struct pixel);
+    img->data = (struct pixel *) malloc(data_size);
+    img->height = header.biHeight;
+    img->width = header.biWidth;
+
+    uint64_t padding = count_padding(img);
+
+    for (size_t i = 0; i < header.biHeight; i++) {
+            fread(&(img->data[i * img->width]), sizeof(struct pixel), img->width, in);
+            fseek(in, padding, SEEK_CUR);
     }
 
-    free(file_data);
-    _free_bmp_header(header);
     return READ_OK;
 }
 
 enum write_status to_bmp( FILE* out, struct image const* img ){   
-    struct bmp_header *header = _generate_header(img);
-    uint64_t padding = img->width % 4;
-    uint64_t data_size = (img->width + (padding)) * img->height * sizeof(struct pixel);
-    uint8_t *data = malloc(data_size);
-    for (size_t row = 0; row < img->height; row++) {
-        for (size_t col = 0; col < img->width; col++) {
-            size_t pixel_i = row * img->width + col;
-            *((struct pixel *) (data + sizeof(struct pixel) * pixel_i + row * padding)) = img->data[pixel_i];
-        }
-    }
-    if(!fwrite(header, 1, sizeof(struct bmp_header), out) ||
-    !fwrite(data, 1, (img->width + padding) * img->height * sizeof(struct pixel), out)){
-        _free_bmp_header(header);
+    struct bmp_header header = _generate_header(img);
+    uint64_t padding = count_padding(img);
+
+    if(!fwrite(&header, 1, sizeof(struct bmp_header), out)){
         return WRITE_ERROR;
-        }
-    _free_bmp_header(header);
+    }
+    const struct pixel nulls[] = {{0},{0},{0}};
+    for (size_t i = 0; i < img->height; i++) {
+        if(!fwrite(&img->data[i * img->width], sizeof(struct pixel), img->width, out) ||
+        ( padding && !fwrite(nulls, 1, padding, out))) 
+        {return WRITE_ERROR;}
+    }
     return WRITE_OK;
 }
-uint8_t print_read_status(enum read_status status){
-    switch (status) {
-        case READ_OK: {
-            printf("Image form file is loaded\n");
-            break;
-        }
-        case READ_INVALID_PATH: {
-            printf("Input file path not found\n");
-            break;
-        }
-        case READ_INVALID_HEADER: {
-            printf("Invalid file header\n");
-            break;
-        }
-        case READ_INVALID_BITS: {
-            printf("Only 24-bit bpm file supported\n");
-            break;
-        }
-        default: {
-            printf("Undefined reading error\n");
-            break;
-        }
-    }
+
+static char* const read_status_string[] = {
+        [READ_OK]                     = "Image form file is loaded\n",
+        [READ_INVALID_SIGNATURE]      = "Invalid Signature. Check file format (Only 24-bit bpm file supported).\n",
+        [READ_INVALID_BITS]           = "Only 24-bit bpm file supported\n",
+        [READ_INVALID_HEADER]         = "Invalid file header\n",
+        [READ_INVALID_PATH]           = "Input file path not found\n"
+};
+
+enum read_status print_read_status(enum read_status status){
+    printf(read_status_string[status]);
     return status;
 }
-uint8_t print_write_status(enum write_status status){
-    switch (status){
-        case WRITE_OK: {
-            printf("Image is saved in file\n");
-            break;
-        }
-        case WRITE_ERROR:{
-            printf("File write error\n");
-            break;
-        }
-        default: {
-            printf("Undefined writing error\n");
-            break;
-        }
-    }
+static char* const write_status_string[] = {
+        [WRITE_OK]      = "Image is saved in file\n",
+        [WRITE_ERROR]   = "File write error\n"
+};
+
+enum read_status print_write_status(enum write_status status){
+    printf(write_status_string[status]);
     return status;
 }

@@ -16,11 +16,10 @@ enum write_status {
     WRITE_ERROR
 } ;
 
-struct image * malloc_bmp();
 void free_bmp(struct image* img);
 enum read_status from_bmp( FILE* in, struct image* img);
 enum write_status to_bmp( FILE* out, struct image const* img );
 
-uint8_t print_read_status(enum read_status status);
-uint8_t print_write_status(enum write_status status);
+enum read_status print_read_status(enum read_status status);
+enum read_status print_write_status(enum write_status status);
 #endif

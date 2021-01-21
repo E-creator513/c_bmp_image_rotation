@@ -5,4 +5,18 @@
 - After to run you need to type `./build/rotator`
 
 ### Example of execution
+#### Input and output
+```
+./build/rotator examples/cat.bmp examples/cat_out.bmp 
+```
+```
+Input File: 'examples/cat.bmp' 
+Output File: 'examples/cat_out.bmp'
+File for reading/writing is open
+Image form file is loaded
+File for reading/writing is open
+Image is saved in file
+Memory freed
+```
+#### Input and output files:
 ![cat](examples/cat.bmp) ![cat](examples/cat_out.bmp)
